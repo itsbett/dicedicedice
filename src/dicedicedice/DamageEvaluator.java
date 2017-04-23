@@ -1,10 +1,33 @@
 /*
- * A recursive descent parser for mathematical expressions. Reads: / + - * sqrt cos sin tan ^
+ * A recursive descent parser for mathematical expressions. Reads: d / + - * sqrt cos sin tan ^
  */
 
 package dicedicedice;
-public class altEvaluator {
-	public static double eval(final String str) {
+
+import java.util.concurrent.ThreadLocalRandom;
+
+public class DamageEvaluator {
+	
+	/*
+	 * Rolls (dice) amount of dice with (sides). e.g. 2d6 will return a value between 2-12, with 6 being the
+	 * mean on normal distribution. (What you would expect from rolling two 1d6 dice in the real world)
+	 */
+	public static int roll(int dice, int sides) {
+		int total = 0;
+		int roll = 0;
+		if (sides<=1) {
+			throw new IllegalArgumentException("The sides of your dice need more than 1 side!");
+		}
+		for (int i = 0; i < dice; i++) {
+			roll = ThreadLocalRandom.current().nextInt(1, sides+1);
+			//System.out.println("Roll: " + i + " You rolled a: " + roll + "!"); //For checking individual rolls
+			total = total + roll;
+			//System.out.println("Total roll: " + total); //For checking sum of rolls
+		}
+		return total;
+		}
+
+	public static int eval(final String str) {
 	    return new Object() {
 	        int pos = -1, ch;
 
@@ -21,21 +44,21 @@ public class altEvaluator {
 	            return false;
 	        }
 
-	        double parse() {
+	        int parse() {
 	            nextChar();
-	            double x = parseExpression();
+	            int x = parseExpression();
 	            if (pos < str.length()) throw new RuntimeException("Unexpected: " + (char)ch);
 	            return x;
 	        }
 
 	        // Grammar:
 	        // expression = term | expression `+` term | expression `-` term
-	        // term = factor | term `*` factor | term `/` factor
+	        // term = factor | term `*` factor | term `/` factor | term `d` factor
 	        // factor = `+` factor | `-` factor | `(` expression `)`
 	        //        | number | functionName factor | factor `^` factor
 
-	        double parseExpression() {
-	            double x = parseTerm();
+	        int parseExpression() {
+	            int x = parseTerm();
 	            for (;;) {
 	                if      (eat('+')) x += parseTerm(); // addition
 	                else if (eat('-')) x -= parseTerm(); // subtraction
@@ -43,41 +66,42 @@ public class altEvaluator {
 	            }
 	        }
 
-	        double parseTerm() {
-	            double x = parseFactor();
+	        int parseTerm() {
+	            int x = parseFactor();
 	            for (;;) {
 	                if      (eat('*')) x *= parseFactor(); // multiplication
 	                else if (eat('/')) x /= parseFactor(); // division
+	                else if (eat('d')) x = roll(x, parseFactor()); //roll dice
 	                else return x;
 	            }
 	        }
 
-	        double parseFactor() {
+	        int parseFactor() {
 	            if (eat('+')) return parseFactor(); // unary plus
 	            if (eat('-')) return -parseFactor(); // unary minus
 
-	            double x;
+	            int x;
 	            int startPos = this.pos;
 	            if (eat('(')) { // parentheses
 	                x = parseExpression();
 	                eat(')');
 	            } else if ((ch >= '0' && ch <= '9') || ch == '.') { // numbers
 	                while ((ch >= '0' && ch <= '9') || ch == '.') nextChar();
-	                x = Double.parseDouble(str.substring(startPos, this.pos));
+	                x = Integer.parseInt(str.substring(startPos, this.pos));
 	            } else if (ch >= 'a' && ch <= 'z') { // functions
 	                while (ch >= 'a' && ch <= 'z') nextChar();
 	                String func = str.substring(startPos, this.pos);
 	                x = parseFactor();
-	                if (func.equals("sqrt")) x = Math.sqrt(x);
-	                else if (func.equals("sin")) x = Math.sin(Math.toRadians(x));
-	                else if (func.equals("cos")) x = Math.cos(Math.toRadians(x));
-	                else if (func.equals("tan")) x = Math.tan(Math.toRadians(x));
+	                if (func.equals("sqrt")) x = (int) Math.sqrt(x);
+	                else if (func.equals("sin")) x = (int) Math.sin(Math.toRadians(x));
+	                else if (func.equals("cos")) x = (int) Math.cos(Math.toRadians(x));
+	                else if (func.equals("tan")) x = (int) Math.tan(Math.toRadians(x));
 	                else throw new RuntimeException("Unknown function: " + func);
 	            } else {
 	                throw new RuntimeException("Unexpected: " + (char)ch);
 	            }
 
-	            if (eat('^')) x = Math.pow(x, parseFactor()); // exponentiation
+	            if (eat('^')) x = (int) Math.pow(x, parseFactor()); // exponentiation
 
 	            return x;
 	        }

@@ -1,8 +1,9 @@
 package dicedicedice;
 
-public class syntax {
+public class Syntax {
 	/*
 	 * List of acceptable syntax
+	 * Includes: 0-9, d, +, -, *, /, ^, (, )
 	 */
 	static boolean[] syntax = new boolean[128];
 	static {
