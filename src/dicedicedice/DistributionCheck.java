@@ -4,7 +4,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Scanner;
-
+/*
+* Console client for running multiple instances of damage calculation, storing results in distribution.txt
+*/
 public class DistributionCheck {
 	private static Scanner reader;
 	private static Writer wr;
